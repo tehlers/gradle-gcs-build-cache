@@ -1,0 +1,182 @@
+# Gradle - GCSBuildCache 
+
+This Gradle plugin provides a build cache implementation that uses Google Cloud Storage to store build artifacts.
+
+## Options
+
+The build cache takes the following options:
+
+|===
+|Option |Description
+
+|credentials
+|JSON key file of the service account to use (required)
+
+|bucket
+|Name of the Google Cloud Storage bucket (required)
+
+|refreshAfterSeconds
+|Amount of time to wait before the timestamp of a cached artifact that is still in use will be renewed (optional)
+
+|===
+
+## Usage
+
+There are multiple ways to use the Google Cloud Storage based build cache inside your projects.
+
+### As plugin in `settings.gradle`
+
+.settings.gradle
+[source,groovy]
+--------------------------------------------------------------------
+buildscript {
+    repositories {
+        maven {
+            url 'https://plugins.gradle.org/m2/'
+        }
+    }
+
+    dependencies {
+        classpath 'gradle.plugin.net.idlestate:gradle-gcs-build-cache:1.0.0'
+    }
+}
+
+apply plugin: 'net.idlestate.gradle-gcs-build-cache'
+
+buildCache {
+    local {
+        enabled = false
+    }
+
+    remote( GCSBuildCache.class ) {
+        credentials = 'my-key.json'
+        bucket = 'my-bucket'
+        refreshAfterSeconds = 86400 // 24h (optional)
+        enabled = true
+        push = true
+    }
+}
+--------------------------------------------------------------------
+
+### Manual registration in `settings.gradle`
+
+.settings.gradle
+[source,groovy]
+--------------------------------------------------------------------
+buildscript {
+    repositories {
+        maven {
+            url 'https://plugins.gradle.org/m2/'
+        }
+    }
+
+    dependencies {
+        classpath 'gradle.plugin.net.idlestate:gradle-gcs-build-cache:1.0.0'
+    }
+}
+
+import net.idlestate.gradle.caching.GCSBuildCache
+import net.idlestate.gradle.caching.GCSBuildCacheServiceFactory
+
+buildCache {
+    local {
+        enabled = false
+    }
+
+    registerBuildCacheService( GCSBuildCache.class, GCSBuildCacheServiceFactory.class )
+
+    remote( GCSBuildCache.class ) {
+        credentials = 'my-key.json'
+        bucket = 'my-bucket'
+        refreshAfterSeconds = 86400 // 24h (optional)
+        enabled = true
+        push = true
+    }
+}
+--------------------------------------------------------------------
+
+### Using an init script
+
+.init-build-cache.gradle
+[source,groovy]
+--------------------------------------------------------------------
+initscript {
+    repositories {
+        maven {
+            url 'https://plugins.gradle.org/m2/'
+        }
+    }
+
+    dependencies {
+        classpath 'gradle.plugin.net.idlestate:gradle-gcs-build-cache:1.0.0'
+    }
+}
+
+import net.idlestate.gradle.caching.GCSBuildCache
+import net.idlestate.gradle.caching.GCSBuildCacheServiceFactory
+
+gradle.settingsEvaluated { settings ->
+    settings.buildCache {
+        local {
+            enabled = false
+        }
+
+        registerBuildCacheService( GCSBuildCache.class, GCSBuildCacheServiceFactory.class )
+
+        remote( GCSBuildCache.class ) {
+            credentials = 'my-key.json'
+            bucket = 'my-bucket'
+            refreshAfterSeconds = 86400 // 24h (optional)
+            enabled = true
+            push = true
+        }
+    }
+}
+--------------------------------------------------------------------
+
+    % ./gradlew --build-cache --init-script init-build-cache.gradle <task>
+
+## Preparation in Google Cloud Storage
+
+The following steps will create a Google Cloud Storage bucket named `$BUCKET` as part of the GCP project `$PROJECT` in your `$REGION` with private access. `gsutil` is available as part of the Google Cloud SDK.
+
+    % gsutil mb -p $PROJECT -c regional -l $REGION gs://$BUCKET
+    [...]
+    % gsutil acl set private gs://$BUCKET
+    [...]
+
+To create a service account `$ACCOUNT` with access to the bucket the following commands have to be executed.
+
+    % gcloud iam service-accounts create $ACCOUNT --display-name "Service account to access the Gradle build cache in Google Cloud Storage"
+    [...]
+    % gsutil acl ch -u $ACCOUNT@$PROJECT.iam.gserviceaccount.com:WRITE gs://$BUCKET
+    [...]
+
+A JSON key file `$KEY_FILE` that could be used by the Gradle plugin to access the bucket is created with the following statement.
+
+    % gcloud iam service-accounts keys create $KEY_FILE --iam-account $ACCOUNT@$PROJECT.iam.gserviceaccount.com
+    [...]
+
+If cached artifacts should be deleted after two weeks lifecycle rules like the following should be applied to the bucket.
+
+.rules.json
+[source,json]
+--------------------------------------------------------------------
+{
+  "rule":
+  [
+{
+  "action": {"type": "Delete"},
+  "condition": {"age": 14}
+}
+  ]
+}
+--------------------------------------------------------------------
+
+    % gsutil lifecycle set rules.json gs://$BUCKET
+    [...]
+
+
+## License
+
+include::LICENSE[]
