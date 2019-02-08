@@ -32,6 +32,8 @@ gradlePlugin {
         create("gcsBuildCache") {
             id = "net.idlestate.gradle-gcs-build-cache"
             implementationClass = "net.idlestate.gradle.caching.GCSBuildCachePlugin"
+            displayName = "GCS Build Cache"
+            description = "A Gradle build cache implementation that uses Google Cloud Storage (GCS) to store the build artifacts. Since this is a settings plugin the build script snippets below won't work. Please consult the documentation at Github."
         }
     }
 }
