@@ -37,7 +37,7 @@ buildscript {
     }
 
     dependencies {
-        classpath 'net.idlestate:gradle-gcs-build-cache:1.0.0'
+        classpath 'net.idlestate:gradle-gcs-build-cache:1.0.1'
     }
 }
 
@@ -71,7 +71,7 @@ buildscript {
     }
 
     dependencies {
-        classpath 'net.idlestate:gradle-gcs-build-cache:1.0.0'
+        classpath 'net.idlestate:gradle-gcs-build-cache:1.0.1'
     }
 }
 
@@ -108,7 +108,7 @@ initscript {
     }
 
     dependencies {
-        classpath 'net.idlestate:gradle-gcs-build-cache:1.0.0'
+        classpath 'net.idlestate:gradle-gcs-build-cache:1.0.1'
     }
 }
 

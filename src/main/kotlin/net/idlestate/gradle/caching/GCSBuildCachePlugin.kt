@@ -25,10 +25,11 @@ import org.gradle.api.initialization.Settings
  */
 class GCSBuildCachePlugin : Plugin<Settings> {
     override fun apply(settings: Settings) {
-        val buildCacheConfiguration = settings.buildCache
-        buildCacheConfiguration.registerBuildCacheService(GCSBuildCache::class.java, GCSBuildCacheServiceFactory::class.java)
-
-        val cache = buildCacheConfiguration.remote(GCSBuildCache::class.java)
-        cache.isPush = true
+        settings.buildCache {
+            registerBuildCacheService(GCSBuildCache::class.java, GCSBuildCacheServiceFactory::class.java)
+            remote(GCSBuildCache::class.java) {
+                isPush = true
+            }
+        }
     }
 }

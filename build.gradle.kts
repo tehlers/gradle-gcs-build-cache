@@ -3,23 +3,23 @@ import org.jlleitschuh.gradle.ktlint.reporter.ReporterType
 
 plugins {
     `java-gradle-plugin`
-    kotlin("jvm") version "1.3.20"
-    id("com.github.hierynomus.license") version "0.14.0"
+    kotlin("jvm") version "1.3.31"
+    id("com.github.hierynomus.license") version "0.15.0"
     id("com.gradle.plugin-publish") version "0.10.1"
+    `kotlin-dsl`
     `maven-publish`
-    id("org.jlleitschuh.gradle.ktlint") version "7.0.0"
+    id("org.jlleitschuh.gradle.ktlint") version "8.2.0"
 }
 
 group = "net.idlestate"
-version = "1.0.0"
+version = "1.0.1"
 
 repositories {
-    mavenCentral()
     jcenter()
 }
 
 dependencies {
-    implementation("com.google.cloud:google-cloud-storage:1.61.0")
+    implementation("com.google.cloud:google-cloud-storage:1.86.0")
     implementation(kotlin("stdlib-jdk8"))
 }
 
@@ -44,12 +44,8 @@ pluginBundle {
     tags = listOf("build-cache", "gcs", "Google Cloud Storage", "cache")
 }
 
-val compileKotlin: KotlinCompile by tasks
-compileKotlin.kotlinOptions {
-    jvmTarget = JavaVersion.VERSION_1_8.toString()
-}
-
-val compileTestKotlin: KotlinCompile by tasks
-compileTestKotlin.kotlinOptions {
-    jvmTarget = JavaVersion.VERSION_1_8.toString()
+tasks.withType<KotlinCompile>().all {
+    kotlinOptions {
+        jvmTarget = JavaVersion.VERSION_1_8.toString()
+    }
 }

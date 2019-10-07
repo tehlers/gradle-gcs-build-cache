@@ -43,7 +43,11 @@ class GCSBuildCacheService(credentials: String, val bucketName: String, val refr
 
     init {
         try {
-            val storage = StorageOptions.newBuilder().setCredentials(ServiceAccountCredentials.fromStream(FileInputStream(credentials))).build().service
+            val storage = StorageOptions.newBuilder()
+                .setCredentials(ServiceAccountCredentials.fromStream(FileInputStream(credentials)))
+                .build()
+                .service
+
             bucket = storage.get(bucketName) ?: throw BuildCacheException("$bucketName is unavailable")
         } catch (e: FileNotFoundException) {
             throw BuildCacheException("Unable to load credentials from $credentials.", e)
@@ -83,7 +87,12 @@ class GCSBuildCacheService(credentials: String, val bucketName: String, val refr
                 return true
             }
         } catch (e: StorageException) {
-            throw BuildCacheException("Unable to load '${key.hashCode}' from Google Cloud Storage bucket '$bucketName'.", e)
+            // https://github.com/googleapis/google-cloud-java/issues/3402
+            if (e.message?.contains("404") == true) {
+                return false
+            } else {
+                throw BuildCacheException("Unable to load '${key.hashCode}' from Google Cloud Storage bucket '$bucketName'.", e)
+            }
         }
 
         return false
