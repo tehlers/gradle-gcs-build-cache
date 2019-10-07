@@ -3,7 +3,7 @@ import org.jlleitschuh.gradle.ktlint.reporter.ReporterType
 
 plugins {
     `java-gradle-plugin`
-    kotlin("jvm") version "1.3.31"
+    kotlin("jvm") version "1.3.50"
     id("com.github.hierynomus.license") version "0.15.0"
     id("com.gradle.plugin-publish") version "0.10.1"
     `kotlin-dsl`
@@ -19,7 +19,7 @@ repositories {
 }
 
 dependencies {
-    implementation("com.google.cloud:google-cloud-storage:1.86.0")
+    implementation("com.google.cloud:google-cloud-storage:1.96.0")
     implementation(kotlin("stdlib-jdk8"))
 }
 
