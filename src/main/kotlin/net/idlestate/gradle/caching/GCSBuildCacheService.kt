@@ -15,6 +15,7 @@
  */
 package net.idlestate.gradle.caching
 
+import com.google.auth.oauth2.GoogleCredentials
 import com.google.auth.oauth2.ServiceAccountCredentials
 import com.google.cloud.storage.Bucket
 import com.google.cloud.storage.StorageException
@@ -44,7 +45,10 @@ class GCSBuildCacheService(credentials: String, val bucketName: String, val refr
     init {
         try {
             val storage = StorageOptions.newBuilder()
-                .setCredentials(ServiceAccountCredentials.fromStream(FileInputStream(credentials)))
+                .setCredentials(credentials.isEmpty() ?
+                    GoogleCredentials.getApplicationDefault() :
+                    ServiceAccountCredentials.fromStream(FileInputStream(credentials))
+                )
                 .build()
                 .service
 
