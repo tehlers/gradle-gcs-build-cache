@@ -45,9 +45,8 @@ class GCSBuildCacheService(credentials: String, val bucketName: String, val refr
     init {
         try {
             val storage = StorageOptions.newBuilder()
-                .setCredentials(credentials.isEmpty() ?
-                    GoogleCredentials.getApplicationDefault() :
-                    ServiceAccountCredentials.fromStream(FileInputStream(credentials))
+                .setCredentials(
+                    if (credentials.isEmpty()) GoogleCredentials.getApplicationDefault() else ServiceAccountCredentials.fromStream(FileInputStream(credentials))
                 )
                 .build()
                 .service
