@@ -10,7 +10,7 @@ The build cache takes the following options:
 |Option |Description
 
 |credentials
-|JSON key file of the service account to use (required)
+|JSON key file of the service account to use, otherwise GCP Application Default Credentials are used. (optional)
 
 |bucket
 |Name of the Google Cloud Storage bucket (required)
@@ -49,7 +49,7 @@ buildCache {
     }
 
     remote( GCSBuildCache.class ) {
-        credentials = 'my-key.json'
+        credentials = 'my-key.json' // (optional)
         bucket = 'my-bucket'
         refreshAfterSeconds = 86400 // 24h (optional)
         enabled = true
@@ -86,7 +86,7 @@ buildCache {
     registerBuildCacheService( GCSBuildCache.class, GCSBuildCacheServiceFactory.class )
 
     remote( GCSBuildCache.class ) {
-        credentials = 'my-key.json'
+        credentials = 'my-key.json' // (optional)
         bucket = 'my-bucket'
         refreshAfterSeconds = 86400 // 24h (optional)
         enabled = true
@@ -124,7 +124,7 @@ gradle.settingsEvaluated { settings ->
         registerBuildCacheService( GCSBuildCache.class, GCSBuildCacheServiceFactory.class )
 
         remote( GCSBuildCache.class ) {
-            credentials = 'my-key.json'
+            credentials = 'my-key.json' // (optional)
             bucket = 'my-bucket'
             refreshAfterSeconds = 86400 // 24h (optional)
             enabled = true
