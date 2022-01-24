@@ -35,16 +35,17 @@ class GCSBuildCacheServiceFactory : BuildCacheServiceFactory<GCSBuildCache> {
         }
 
         describer
-                .type("Google Cloud Storage")
-                .config("credentials", credentials)
-                .config("bucket", bucket)
-                .config("refreshAfterSeconds", refreshAfterSeconds.toString())
+            .type("Google Cloud Storage")
+            .config("credentials", credentials)
+            .config("bucket", bucket)
+            .config("refreshAfterSeconds", refreshAfterSeconds.toString())
 
         return GCSBuildCacheService(credentials, bucket, refreshAfterSeconds.toLong())
     }
 
     fun gradleException(message: String): GradleException {
-        return GradleException("""
+        return GradleException(
+"""
                 $message
 
                 remote( GCSBuildCache.class ) {
@@ -54,6 +55,7 @@ class GCSBuildCacheServiceFactory : BuildCacheServiceFactory<GCSBuildCache> {
                     enabled = true
                     push = true
                 }
-        """.trimIndent())
+            """.trimIndent()
+        )
     }
 }

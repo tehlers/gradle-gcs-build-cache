@@ -3,28 +3,31 @@ import org.jlleitschuh.gradle.ktlint.reporter.ReporterType
 
 plugins {
     `java-gradle-plugin`
-    kotlin("jvm") version "1.3.50"
-    id("com.github.hierynomus.license") version "0.15.0"
-    id("com.gradle.plugin-publish") version "0.10.1"
+    kotlin("jvm") version "1.5.31"
+    id("com.github.hierynomus.license") version "0.16.1"
+    id("com.gradle.plugin-publish") version "0.20.0"
     `kotlin-dsl`
     `maven-publish`
-    id("org.jlleitschuh.gradle.ktlint") version "8.2.0"
+    id("org.jlleitschuh.gradle.ktlint") version "10.2.1"
 }
 
 group = "net.idlestate"
-version = "1.0.1"
+version = "1.1.0"
 
 repositories {
-    jcenter()
+    mavenCentral()
 }
 
 dependencies {
-    implementation("com.google.cloud:google-cloud-storage:1.96.0")
+    implementation("com.google.cloud:google-cloud-storage:1.118.1")
     implementation(kotlin("stdlib-jdk8"))
 }
 
-ktlint {
-    reporters.set(setOf(ReporterType.PLAIN, ReporterType.CHECKSTYLE))
+configure<org.jlleitschuh.gradle.ktlint.KtlintExtension> {
+    reporters {
+        reporter(ReporterType.PLAIN)
+        reporter(ReporterType.CHECKSTYLE)
+    }
 }
 
 gradlePlugin {
