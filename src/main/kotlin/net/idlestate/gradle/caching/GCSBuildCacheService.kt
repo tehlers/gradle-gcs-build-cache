@@ -20,12 +20,12 @@ import com.google.auth.oauth2.ServiceAccountCredentials
 import com.google.cloud.storage.Bucket
 import com.google.cloud.storage.StorageException
 import com.google.cloud.storage.StorageOptions
+import com.google.common.io.FileBackedOutputStream
 import org.gradle.caching.BuildCacheEntryReader
 import org.gradle.caching.BuildCacheEntryWriter
 import org.gradle.caching.BuildCacheException
 import org.gradle.caching.BuildCacheKey
 import org.gradle.caching.BuildCacheService
-import java.io.ByteArrayOutputStream
 import java.io.FileInputStream
 import java.io.FileNotFoundException
 import java.io.IOException
@@ -62,11 +62,13 @@ class GCSBuildCacheService(credentials: String, val bucketName: String, val refr
     }
 
     override fun store(key: BuildCacheKey, writer: BuildCacheEntryWriter) {
-        val value = ByteArrayOutputStream()
+        val value = FileBackedOutputStream(FILE_THRESHOLD)
         writer.writeTo(value)
 
         try {
-            bucket.create(key.hashCode, value.toByteArray())
+            value.asByteSource().openBufferedStream().use {
+                bucket.create(key.hashCode, it)
+            }
         } catch (e: StorageException) {
             throw BuildCacheException("Unable to store '${key.hashCode}' in Google Cloud Storage bucket '$bucketName'.", e)
         }
@@ -103,5 +105,12 @@ class GCSBuildCacheService(credentials: String, val bucketName: String, val refr
 
     override fun close() {
         // nothing to do
+    }
+
+    companion object {
+        /**
+         * The threshold to write data onto storage.
+         */
+        const val FILE_THRESHOLD = 8 * 1024 * 1024
     }
 }
