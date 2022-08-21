@@ -5,10 +5,10 @@ plugins {
     `java-gradle-plugin`
     kotlin("jvm") version "1.5.31"
     id("com.github.hierynomus.license") version "0.16.1"
-    id("com.gradle.plugin-publish") version "0.20.0"
+    id("com.gradle.plugin-publish") version "1.0.0"
     `kotlin-dsl`
     `maven-publish`
-    id("org.jlleitschuh.gradle.ktlint") version "10.2.1"
+    id("org.jlleitschuh.gradle.ktlint") version "10.3.0"
 }
 
 group = "net.idlestate"
