@@ -52,3 +52,19 @@ tasks.withType<KotlinCompile>().all {
         jvmTarget = JavaVersion.VERSION_1_8.toString()
     }
 }
+
+publishing.publications.configureEach {
+    (this as MavenPublication).pom {
+        scm {
+            connection.set("scm:git:git@github.com:tehlers/gradle-gcs-build-cache.git")
+            developerConnection.set("scm:git:git@github.com:tehlers/gradle-gcs-build-cache.git")
+            url.set("https://github.com/tehlers/gradle-gcs-build-cache/")
+        }
+        licenses {
+            license {
+                name.set("Apache License 2.0")
+                url.set("https://spdx.org/licenses/Apache-2.0.html")
+            }
+        }
+    }
+}
