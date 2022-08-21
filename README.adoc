@@ -52,6 +52,7 @@ buildCache {
         credentials = 'my-key.json' // (optional)
         bucket = 'my-bucket'
         refreshAfterSeconds = 86400 // 24h (optional)
+        writeThreshold = 8 * 1024 * 1024 // 8 MiB
         enabled = true
         push = true
     }
@@ -89,6 +90,7 @@ buildCache {
         credentials = 'my-key.json' // (optional)
         bucket = 'my-bucket'
         refreshAfterSeconds = 86400 // 24h (optional)
+        writeThreshold = 8 * 1024 * 1024 // 8 MiB
         enabled = true
         push = true
     }
@@ -127,6 +129,7 @@ gradle.settingsEvaluated { settings ->
             credentials = 'my-key.json' // (optional)
             bucket = 'my-bucket'
             refreshAfterSeconds = 86400 // 24h (optional)
+            writeThreshold = 8 * 1024 * 1024 // 8 MiB
             enabled = true
             push = true
         }

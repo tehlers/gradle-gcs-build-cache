@@ -29,6 +29,7 @@ class GCSBuildCacheServiceFactory : BuildCacheServiceFactory<GCSBuildCache> {
         val credentials = (if (configuration.credentials == null) "" else configuration.credentials) as String
         val bucket = configuration.bucket
         val refreshAfterSeconds = configuration.refreshAfterSeconds ?: 0
+        val writeThreshold = configuration.writeThreshold ?: DEFAULT_WRITE_THRESHOLD
 
         if (bucket == null || bucket == "") {
             throw gradleException("The name of the bucket has to be defined.")
@@ -39,8 +40,9 @@ class GCSBuildCacheServiceFactory : BuildCacheServiceFactory<GCSBuildCache> {
             .config("credentials", credentials)
             .config("bucket", bucket)
             .config("refreshAfterSeconds", refreshAfterSeconds.toString())
+            .config("writeThreshold", writeThreshold.toString())
 
-        return GCSBuildCacheService(credentials, bucket, refreshAfterSeconds.toLong())
+        return GCSBuildCacheService(credentials, bucket, refreshAfterSeconds.toLong(), writeThreshold)
     }
 
     fun gradleException(message: String): GradleException {
@@ -52,10 +54,18 @@ class GCSBuildCacheServiceFactory : BuildCacheServiceFactory<GCSBuildCache> {
                     credentials = 'my-key.json' // (optional)
                     bucket = 'my-bucket'
                     refreshAfterSeconds = 86400 // 24h (optional)
+                    writeThreshold = 8 * 1024 * 1024 // 8 MiB
                     enabled = true
                     push = true
                 }
             """.trimIndent()
         )
+    }
+
+    companion object {
+        /**
+         * The threshold to write data onto storage.
+         */
+        const val DEFAULT_WRITE_THRESHOLD = 8 * 1024 * 1024
     }
 }

@@ -39,9 +39,8 @@ import java.time.Instant
  *
  * @author Thorsten Ehlers (thorsten.ehlers@googlemail.com) (initial creation)
  */
-class GCSBuildCacheService(credentials: String, val bucketName: String, val refreshAfterSeconds: Long) : BuildCacheService {
+class GCSBuildCacheService(credentials: String, val bucketName: String, val refreshAfterSeconds: Long, val writeThreshold: Int) : BuildCacheService {
     private val bucket: Bucket
-
     init {
         try {
             val storage = StorageOptions.newBuilder()
@@ -62,7 +61,7 @@ class GCSBuildCacheService(credentials: String, val bucketName: String, val refr
     }
 
     override fun store(key: BuildCacheKey, writer: BuildCacheEntryWriter) {
-        val value = FileBackedOutputStream(FILE_THRESHOLD)
+        val value = FileBackedOutputStream(writeThreshold, true)
         writer.writeTo(value)
 
         try {
@@ -105,12 +104,5 @@ class GCSBuildCacheService(credentials: String, val bucketName: String, val refr
 
     override fun close() {
         // nothing to do
-    }
-
-    companion object {
-        /**
-         * The threshold to write data onto storage.
-         */
-        const val FILE_THRESHOLD = 8 * 1024 * 1024
     }
 }
