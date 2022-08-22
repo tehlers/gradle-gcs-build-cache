@@ -18,6 +18,9 @@ The build cache takes the following options:
 |refreshAfterSeconds
 |Amount of time to wait before the timestamp of a cached artifact that is still in use will be renewed (optional)
 
+|writeThreshold
+|Number of bytes at which the plugin starts using a file as a buffer for writing cache entries - default 8 MiB (optional)
+
 |===
 
 ## Usage
