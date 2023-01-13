@@ -8,7 +8,7 @@ plugins {
     id("com.gradle.plugin-publish") version "1.0.0"
     `kotlin-dsl`
     `maven-publish`
-    id("org.jlleitschuh.gradle.ktlint") version "10.3.0"
+    id("org.jlleitschuh.gradle.ktlint") version "11.0.0"
 }
 
 group = "net.idlestate"
