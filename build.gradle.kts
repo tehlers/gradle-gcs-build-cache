@@ -12,14 +12,14 @@ plugins {
 }
 
 group = "net.idlestate"
-version = "1.2.0"
+version = "1.2.1-SNAPSHOT"
 
 repositories {
     mavenCentral()
 }
 
 dependencies {
-    implementation("com.google.cloud:google-cloud-storage:1.118.1")
+    implementation("com.google.cloud:google-cloud-storage:2.17.1")
     implementation(kotlin("stdlib-jdk8"))
 }
 
