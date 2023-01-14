@@ -82,7 +82,7 @@ class GCSBuildCacheService(credentials: String, val bucketName: String, val refr
 
                 if (refreshAfterSeconds > 0) {
                     // Update creation time so that artifacts that are still used won't be deleted.
-                    val createTime = Instant.ofEpochMilli(blob.createTime)
+                    val createTime = blob.createTimeOffsetDateTime.toInstant()
                     if (createTime.plusSeconds(refreshAfterSeconds).isBefore(Instant.now())) {
                         bucket.create(key.hashCode, blob.getContent())
                     }
