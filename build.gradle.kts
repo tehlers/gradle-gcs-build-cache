@@ -12,7 +12,7 @@ plugins {
 }
 
 group = "net.idlestate"
-version = "1.2.1-SNAPSHOT"
+version = "1.2.1"
 
 repositories {
     mavenCentral()
