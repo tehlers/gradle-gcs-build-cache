@@ -3,7 +3,7 @@ import org.jlleitschuh.gradle.ktlint.reporter.ReporterType
 
 plugins {
     `java-gradle-plugin`
-    kotlin("jvm") version "1.5.31"
+    kotlin("jvm") version "1.7.10"
     id("com.github.hierynomus.license") version "0.16.1"
     id("com.gradle.plugin-publish") version "1.0.0"
     `kotlin-dsl`
