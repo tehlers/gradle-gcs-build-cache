@@ -26,6 +26,7 @@ import org.gradle.caching.configuration.AbstractBuildCache
 abstract class GCSBuildCache(
     var credentials: String? = "",
     var bucket: String? = "",
+    var prefix: String? = null,
     var refreshAfterSeconds: Int? = 0,
     var writeThreshold: Int? = DEFAULT_WRITE_THRESHOLD,
 ) : AbstractBuildCache()
