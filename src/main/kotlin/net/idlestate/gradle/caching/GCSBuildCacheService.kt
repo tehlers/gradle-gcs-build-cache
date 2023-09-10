@@ -39,7 +39,7 @@ import java.time.Instant
  *
  * @author Thorsten Ehlers (thorsten.ehlers@googlemail.com) (initial creation)
  */
-class GCSBuildCacheService(credentials: String, val bucketName: String, val prefix: String, val refreshAfterSeconds: Long, val writeThreshold: Int) : BuildCacheService {
+class GCSBuildCacheService(credentials: String, val bucketName: String, val prefix: String?, val refreshAfterSeconds: Long, val writeThreshold: Int) : BuildCacheService {
     private val bucket: Bucket
     init {
         try {
@@ -63,7 +63,7 @@ class GCSBuildCacheService(credentials: String, val bucketName: String, val pref
     override fun store(key: BuildCacheKey, writer: BuildCacheEntryWriter) {
         val value = FileBackedOutputStream(writeThreshold, true)
         writer.writeTo(value)
-        val path = prefix + key.hashCode
+        val path = listOfNotNull(prefix, key.hashCode).joinToString("/")
 
         try {
             value.asByteSource().openBufferedStream().use {
@@ -75,7 +75,7 @@ class GCSBuildCacheService(credentials: String, val bucketName: String, val pref
     }
 
     override fun load(key: BuildCacheKey, reader: BuildCacheEntryReader): Boolean {
-        val path = prefix + key.hashCode
+        val path = listOfNotNull(prefix, key.hashCode).joinToString("/")
         try {
             val blob = bucket.get(path)
 
