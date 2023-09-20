@@ -70,7 +70,7 @@ class GCSBuildCacheService(credentials: String, val bucketName: String, val pref
                 bucket.create(path, it)
             }
         } catch (e: StorageException) {
-            throw BuildCacheException("Unable to store '${path}' in Google Cloud Storage bucket '$bucketName'.", e)
+            throw BuildCacheException("Unable to store '$path' in Google Cloud Storage bucket '$bucketName'.", e)
         }
     }
 
@@ -98,7 +98,7 @@ class GCSBuildCacheService(credentials: String, val bucketName: String, val pref
                 return false
             }
 
-            throw BuildCacheException("Unable to load '${path}' from Google Cloud Storage bucket '$bucketName'.", e)
+            throw BuildCacheException("Unable to load '$path' from Google Cloud Storage bucket '$bucketName'.", e)
         }
 
         return false
