@@ -39,7 +39,7 @@ import java.time.Instant
  *
  * @author Thorsten Ehlers (thorsten.ehlers@googlemail.com) (initial creation)
  */
-class GCSBuildCacheService(credentials: String, val bucketName: String, val refreshAfterSeconds: Long, val writeThreshold: Int) : BuildCacheService {
+class GCSBuildCacheService(credentials: String, val bucketName: String, val prefix: String?, val refreshAfterSeconds: Long, val writeThreshold: Int) : BuildCacheService {
     private val bucket: Bucket
     init {
         try {
@@ -63,19 +63,21 @@ class GCSBuildCacheService(credentials: String, val bucketName: String, val refr
     override fun store(key: BuildCacheKey, writer: BuildCacheEntryWriter) {
         val value = FileBackedOutputStream(writeThreshold, true)
         writer.writeTo(value)
+        val path = listOfNotNull(prefix, key.hashCode).joinToString("/")
 
         try {
             value.asByteSource().openBufferedStream().use {
-                bucket.create(key.hashCode, it)
+                bucket.create(path, it)
             }
         } catch (e: StorageException) {
-            throw BuildCacheException("Unable to store '${key.hashCode}' in Google Cloud Storage bucket '$bucketName'.", e)
+            throw BuildCacheException("Unable to store '${path}' in Google Cloud Storage bucket '$bucketName'.", e)
         }
     }
 
     override fun load(key: BuildCacheKey, reader: BuildCacheEntryReader): Boolean {
+        val path = listOfNotNull(prefix, key.hashCode).joinToString("/")
         try {
-            val blob = bucket.get(key.hashCode)
+            val blob = bucket.get(path)
 
             if (blob != null) {
                 reader.readFrom(Channels.newInputStream(blob.reader()))
@@ -84,7 +86,7 @@ class GCSBuildCacheService(credentials: String, val bucketName: String, val refr
                     // Update creation time so that artifacts that are still used won't be deleted.
                     val createTime = blob.createTimeOffsetDateTime.toInstant()
                     if (createTime.plusSeconds(refreshAfterSeconds).isBefore(Instant.now())) {
-                        bucket.create(key.hashCode, blob.getContent())
+                        bucket.create(path, blob.getContent())
                     }
                 }
 
@@ -96,7 +98,7 @@ class GCSBuildCacheService(credentials: String, val bucketName: String, val refr
                 return false
             }
 
-            throw BuildCacheException("Unable to load '${key.hashCode}' from Google Cloud Storage bucket '$bucketName'.", e)
+            throw BuildCacheException("Unable to load '${path}' from Google Cloud Storage bucket '$bucketName'.", e)
         }
 
         return false

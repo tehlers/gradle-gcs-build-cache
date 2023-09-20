@@ -15,6 +15,9 @@ The build cache takes the following options:
 |bucket
 |Name of the Google Cloud Storage bucket (required)
 
+|prefix
+|Path prefix for objects written to Google Cloud Storage (optional)
+
 |refreshAfterSeconds
 |Amount of time to wait before the timestamp of a cached artifact that is still in use will be renewed (optional)
 
@@ -54,6 +57,7 @@ buildCache {
     remote( GCSBuildCache.class ) {
         credentials = 'my-key.json' // (optional)
         bucket = 'my-bucket'
+        prefix = 'app-cache' // (optional)
         refreshAfterSeconds = 86400 // 24h (optional)
         writeThreshold = 8 * 1024 * 1024 // 8 MiB
         enabled = true
@@ -92,6 +96,7 @@ buildCache {
     remote( GCSBuildCache.class ) {
         credentials = 'my-key.json' // (optional)
         bucket = 'my-bucket'
+        prefix = 'app-cache' // (optional)
         refreshAfterSeconds = 86400 // 24h (optional)
         writeThreshold = 8 * 1024 * 1024 // 8 MiB
         enabled = true
@@ -131,6 +136,7 @@ gradle.settingsEvaluated { settings ->
         remote( GCSBuildCache.class ) {
             credentials = 'my-key.json' // (optional)
             bucket = 'my-bucket'
+            prefix = 'app-cache' // (optional)
             refreshAfterSeconds = 86400 // 24h (optional)
             writeThreshold = 8 * 1024 * 1024 // 8 MiB
             enabled = true
