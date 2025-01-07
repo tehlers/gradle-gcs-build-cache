@@ -17,16 +17,20 @@ package net.idlestate.gradle.caching
 
 import net.idlestate.gradle.caching.GCSBuildCacheServiceFactory.Companion.DEFAULT_WRITE_THRESHOLD
 import org.gradle.caching.configuration.AbstractBuildCache
+import javax.inject.Inject
 
 /**
  * Configuration of the GCS based build cache.
  *
  * @author Thorsten Ehlers (thorsten.ehlers@googlemail.com) (initial creation)
  */
-abstract class GCSBuildCache(
+abstract class GCSBuildCache constructor(
     var credentials: String? = "",
     var bucket: String? = "",
     var prefix: String? = null,
     var refreshAfterSeconds: Int? = 0,
     var writeThreshold: Int? = DEFAULT_WRITE_THRESHOLD,
-) : AbstractBuildCache()
+) : AbstractBuildCache() {
+    @Inject constructor() : this("", "", null, 0, DEFAULT_WRITE_THRESHOLD) {
+    }
+}
