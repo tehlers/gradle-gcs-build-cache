@@ -30,7 +30,7 @@ import java.io.FileInputStream
 import java.io.FileNotFoundException
 import java.io.IOException
 import java.nio.channels.Channels
-import java.time.Instant
+import java.time.OffsetDateTime
 
 /**
  * BuildCacheService that stores the build artifacts in Google Cloud Storage.
@@ -38,73 +38,102 @@ import java.time.Instant
  * that artifacts still in use are not deleted.
  *
  * @author Thorsten Ehlers (thorsten.ehlers@googlemail.com) (initial creation)
+ * @author Nico Thomas Beranek (nico@jube.at) (1.4.0 update)
  */
-class GCSBuildCacheService(credentials: String, val bucketName: String, val prefix: String?, val refreshAfterSeconds: Long, val writeThreshold: Int) : BuildCacheService {
+class GCSBuildCacheService(
+    credentials: String,
+    private val bucketName: String,
+    private val prefix: String?,
+    private val refreshAfterSeconds: Long,
+    private val writeThreshold: Int,
+) : BuildCacheService {
     private val bucket: Bucket
-    init {
-        try {
-            val storage = StorageOptions.newBuilder()
-                .setCredentials(
-                    if (credentials.isEmpty()) GoogleCredentials.getApplicationDefault() else ServiceAccountCredentials.fromStream(FileInputStream(credentials))
-                )
-                .build()
-                .service
 
-            bucket = storage.get(bucketName) ?: throw BuildCacheException("$bucketName is unavailable")
+    init {
+        val creds = resolveCredentials(credentials)
+        try {
+            val storage =
+                StorageOptions
+                    .newBuilder()
+                    .setCredentials(creds)
+                    .build()
+                    .service
+
+            bucket = storage[bucketName] ?: throw BuildCacheException("Bucket '$bucketName' is unavailable.")
         } catch (e: FileNotFoundException) {
             throw BuildCacheException("Unable to load credentials from $credentials.", e)
         } catch (e: IOException) {
-            throw BuildCacheException("Unable to access Google Cloud Storage bucket '$bucketName'.", e)
+            throw BuildCacheException("Unable to initialize access to bucket '$bucketName'.", e)
         } catch (e: StorageException) {
             throw BuildCacheException("Unable to access Google Cloud Storage bucket '$bucketName'.", e)
         }
     }
 
-    override fun store(key: BuildCacheKey, writer: BuildCacheEntryWriter) {
-        val value = FileBackedOutputStream(writeThreshold, true)
-        writer.writeTo(value)
-        val path = listOfNotNull(prefix, key.hashCode).joinToString("/")
+    override fun store(
+        key: BuildCacheKey,
+        writer: BuildCacheEntryWriter,
+    ) {
+        val objectName = objectNameFor(key)
 
-        try {
-            value.asByteSource().openBufferedStream().use {
-                bucket.create(path, it)
-            }
-        } catch (e: StorageException) {
-            throw BuildCacheException("Unable to store '$path' in Google Cloud Storage bucket '$bucketName'.", e)
-        }
-    }
-
-    override fun load(key: BuildCacheKey, reader: BuildCacheEntryReader): Boolean {
-        val path = listOfNotNull(prefix, key.hashCode).joinToString("/")
-        try {
-            val blob = bucket.get(path)
-
-            if (blob != null) {
-                reader.readFrom(Channels.newInputStream(blob.reader()))
-
-                if (refreshAfterSeconds > 0) {
-                    // Update creation time so that artifacts that are still used won't be deleted.
-                    val createTime = blob.createTimeOffsetDateTime.toInstant()
-                    if (createTime.plusSeconds(refreshAfterSeconds).isBefore(Instant.now())) {
-                        bucket.create(path, blob.getContent())
-                    }
+        runCatching {
+            FileBackedOutputStream(writeThreshold, true).use { sink ->
+                writer.writeTo(sink)
+                sink.asByteSource().openBufferedStream().use { inStream ->
+                    bucket.create(objectName, inStream)
                 }
-
-                return true
             }
-        } catch (e: StorageException) {
-            // https://github.com/googleapis/google-cloud-java/issues/3402
-            if (e.message?.contains("404") == true) {
-                return false
-            }
-
-            throw BuildCacheException("Unable to load '$path' from Google Cloud Storage bucket '$bucketName'.", e)
+        }.onFailure {
+            throw BuildCacheException("Unable to store '$objectName' in bucket '$bucketName'.", it)
         }
+    }
 
-        return false
+    override fun load(
+        key: BuildCacheKey,
+        reader: BuildCacheEntryReader,
+    ): Boolean {
+        val objectName = objectNameFor(key)
+        try {
+            val blob = bucket.get(objectName) ?: return false
+
+            blob.reader().use { rc ->
+                Channels.newInputStream(rc).use { input ->
+                    reader.readFrom(input)
+                }
+            }
+
+            if (refreshAfterSeconds > 0) {
+                val created = blob.createTimeOffsetDateTime
+                if (created != null && created.plusSeconds(refreshAfterSeconds).isBefore(OffsetDateTime.now())) {
+                    blob.copyTo(bucketName, objectName)
+                }
+            }
+
+            return true
+        } catch (e: StorageException) {
+            // Only treat 404 as a cache miss; everything else is a hard failure.
+            if (e.code == 404) return false
+            throw BuildCacheException("Unable to load '$objectName' from Google Cloud Storage bucket '$bucketName'.", e)
+        }
     }
 
     override fun close() {
-        // nothing to do
+        // Nothing to close; Storage is lightweight and per-request.
     }
+
+    private fun objectNameFor(key: BuildCacheKey): String =
+        buildString {
+            if (!prefix.isNullOrEmpty()) {
+                append(prefix)
+                append('/')
+            }
+
+            append(key.hashCode)
+        }
+
+    private fun resolveCredentials(input: String): GoogleCredentials =
+        if (input.isEmpty()) {
+            GoogleCredentials.getApplicationDefault()
+        } else {
+            ServiceAccountCredentials.fromStream(FileInputStream(input))
+        }
 }
