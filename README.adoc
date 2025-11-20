@@ -31,12 +31,12 @@ buildCache {
     }
 
     remote<net.idlestate.gradle.caching.GCSBuildCache> {
-        // credentials.set("") uses Google ADC if left empty (recommended on CI)
-        credentials.set("/path/to/service-account.json") // optional
-        bucket.set("my-bucket")                          // required
-        prefix.set("app-cache")                          // optional
-        refreshAfterSeconds.set(86_400)                  // optional (24h)
-        writeThreshold.set(8 * 1024 * 1024)              // optional (8 MiB)
+        // credentials = "" uses Google ADC if left empty (recommended on CI)
+        credentials = "/path/to/service-account.json"    // optional
+        bucket = "my-bucket"                             // required
+        prefix = "app-cache"                             // optional
+        refreshAfterSeconds = 86400                      // optional (24h)
+        writeThreshold = 8 * 1024 * 1024                 // optional (8 MiB)
         isEnabled = true
         isPush = true
     }
