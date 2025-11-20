@@ -1,125 +1,150 @@
-# Gradle - GCSBuildCache 
+= Gradle – GCS Build Cache
+:toc:
+:icons: font
+:source-highlighter: coderay
 
-This Gradle plugin provides a build cache implementation that uses Google Cloud Storage to store build artifacts.
+This Settings plugin provides a *remote build cache* backed by *Google Cloud Storage (GCS)*.
+It can also be registered manually without applying the plugin.
 
-## Options
+== Requirements
 
-The build cache takes the following options:
+* Gradle 9.x (built and tested with 9.2.1)
+* JDK 17+ to run Gradle
+* A GCS bucket and appropriate IAM on your project/bucket
 
-|===
-|Option |Description
+== Installation
 
-|credentials
-|JSON key file of the service account to use, otherwise GCP Application Default Credentials are used. (optional)
+=== Recommended: apply the Settings plugin (Kotlin DSL)
 
-|bucket
-|Name of the Google Cloud Storage bucket (required)
-
-|prefix
-|Path prefix for objects written to Google Cloud Storage (optional)
-
-|refreshAfterSeconds
-|Amount of time to wait before the timestamp of a cached artifact that is still in use will be renewed (optional)
-
-|writeThreshold
-|Number of bytes at which the plugin starts using a file as a buffer for writing cache entries - default 8 MiB (optional)
-
-|===
-
-## Usage
-
-There are multiple ways to use the Google Cloud Storage based build cache inside your projects.
-
-### As plugin in `settings.gradle`
-
-.settings.gradle
-[source,groovy]
---------------------------------------------------------------------
-buildscript {
-    repositories {
-        maven {
-            url 'https://plugins.gradle.org/m2/'
-        }
-    }
-
-    dependencies {
-        classpath 'net.idlestate:gradle-gcs-build-cache:1.3.0'
-    }
+.settings.gradle.kts
+[source,kotlin]
+----
+plugins {
+    id("net.idlestate.gradle-gcs-build-cache") version "1.4.0"
 }
 
-apply plugin: 'net.idlestate.gradle-gcs-build-cache'
+// Configure the remote cache (the plugin registers the service for you)
+buildCache {
+    // Optionally disable local cache in CI
+    local {
+        isEnabled = true
+    }
+
+    remote<net.idlestate.gradle.caching.GCSBuildCache> {
+        // credentials.set("") uses Google ADC if left empty (recommended on CI)
+        credentials.set("/path/to/service-account.json") // optional
+        bucket.set("my-bucket")                          // required
+        prefix.set("app-cache")                          // optional
+        refreshAfterSeconds.set(86_400)                  // optional (24h)
+        writeThreshold.set(8 * 1024 * 1024)              // optional (8 MiB)
+        isEnabled = true
+        isPush = true
+    }
+}
+----
+
+=== Manual registration (Kotlin DSL)
+
+.settings.gradle.kts
+[source,kotlin]
+----
+import net.idlestate.gradle.caching.GCSBuildCache
+import net.idlestate.gradle.caching.GCSBuildCacheServiceFactory
+import org.gradle.kotlin.dsl.registerBuildCacheService
+import org.gradle.kotlin.dsl.remote
+
+plugins {
+    id("net.idlestate.gradle-gcs-build-cache") version "1.4.0" apply false
+}
 
 buildCache {
     local {
-        enabled = false
+        isEnabled = true
     }
 
-    remote( GCSBuildCache.class ) {
-        credentials = 'my-key.json' // (optional)
+    registerBuildCacheService<GCSBuildCache>(GCSBuildCacheServiceFactory::class)
+
+    remote<GCSBuildCache> {
+        credentials = "/path/to/service-account.json" // optional; empty uses ADC
+        bucket = "my-bucket"
+        prefix = "app-cache"
+        refreshAfterSeconds.set = 86400
+        writeThreshold = 8 * 1024 * 1024
+        isEnabled = true
+        isPush = true
+    }
+}
+----
+
+=== Groovy DSL variants
+
+.settings.gradle
+[source,groovy]
+----
+import net.idlestate.gradle.caching.GCSBuildCache
+import net.idlestate.gradle.caching.GCSBuildCacheServiceFactory
+
+plugins {
+    id "net.idlestate.gradle-gcs-build-cache" version "1.4.0" apply false
+}
+
+buildCache {
+    local {
+        enabled = true
+    }
+
+    registerBuildCacheService(GCSBuildCache, GCSBuildCacheServiceFactory)
+
+    remote(GCSBuildCache) {
+        credentials = 'my-key.json' // optional; empty uses ADC
         bucket = 'my-bucket'
-        prefix = 'app-cache' // (optional)
-        refreshAfterSeconds = 86400 // 24h (optional)
-        writeThreshold = 8 * 1024 * 1024 // 8 MiB
+        prefix = 'app-cache'
+        refreshAfterSeconds = 86400
+        writeThreshold = 8 * 1024 * 1024
         enabled = true
         push = true
     }
 }
---------------------------------------------------------------------
+----
 
-### Manual registration in `settings.gradle`
+=== Using an init script (Kotlin)
 
-.settings.gradle
-[source,groovy]
---------------------------------------------------------------------
-buildscript {
-    repositories {
-        maven {
-            url 'https://plugins.gradle.org/m2/'
-        }
-    }
-
-    dependencies {
-        classpath 'net.idlestate:gradle-gcs-build-cache:1.3.0'
-    }
+.init.gradle.kts
+[source,kts]
+----
+initscript {
+    repositories { gradlePluginPortal() }
+    dependencies { classpath("net.idlestate:gradle-gcs-build-cache:1.4.0") }
 }
 
 import net.idlestate.gradle.caching.GCSBuildCache
 import net.idlestate.gradle.caching.GCSBuildCacheServiceFactory
 
-buildCache {
-    local {
-        enabled = false
-    }
-
-    registerBuildCacheService( GCSBuildCache.class, GCSBuildCacheServiceFactory.class )
-
-    remote( GCSBuildCache.class ) {
-        credentials = 'my-key.json' // (optional)
-        bucket = 'my-bucket'
-        prefix = 'app-cache' // (optional)
-        refreshAfterSeconds = 86400 // 24h (optional)
-        writeThreshold = 8 * 1024 * 1024 // 8 MiB
-        enabled = true
-        push = true
+gradle.settingsEvaluated {
+    buildCache {
+        local { enabled = true }
+        registerBuildCacheService<GCSBuildCache>(GCSBuildCacheServiceFactory::class)
+        remote<GCSBuildCache> {
+            credentials = "my-key.json" // optional; empty uses ADC
+            bucket = "my-bucket"
+            prefix = "app-cache"
+            refreshAfterSeconds = 86400
+            writeThreshold = 8 * 1024 * 1024
+            enabled = true
+            push = true
+        }
     }
 }
---------------------------------------------------------------------
+----
 
-### Using an init script
+=== Using an init script (Groovy)
 
 .init-build-cache.gradle
 [source,groovy]
---------------------------------------------------------------------
+----
 initscript {
-    repositories {
-        maven {
-            url 'https://plugins.gradle.org/m2/'
-        }
-    }
-
-    dependencies {
-        classpath 'net.idlestate:gradle-gcs-build-cache:1.3.0'
-    }
+    repositories { gradlePluginPortal() }
+    dependencies { classpath 'net.idlestate:gradle-gcs-build-cache:1.4.0' }
 }
 
 import net.idlestate.gradle.caching.GCSBuildCache
@@ -127,68 +152,142 @@ import net.idlestate.gradle.caching.GCSBuildCacheServiceFactory
 
 gradle.settingsEvaluated { settings ->
     settings.buildCache {
-        local {
-            enabled = false
-        }
-
-        registerBuildCacheService( GCSBuildCache.class, GCSBuildCacheServiceFactory.class )
-
-        remote( GCSBuildCache.class ) {
-            credentials = 'my-key.json' // (optional)
+        local { enabled = true }
+        registerBuildCacheService(GCSBuildCache, GCSBuildCacheServiceFactory)
+        remote(GCSBuildCache) {
+            credentials = 'my-key.json' // optional; empty uses ADC
             bucket = 'my-bucket'
-            prefix = 'app-cache' // (optional)
-            refreshAfterSeconds = 86400 // 24h (optional)
-            writeThreshold = 8 * 1024 * 1024 // 8 MiB
+            prefix = 'app-cache'
+            refreshAfterSeconds = 86400
+            writeThreshold = 8 * 1024 * 1024
             enabled = true
             push = true
         }
     }
 }
---------------------------------------------------------------------
+----
 
-    % ./gradlew --build-cache --init-script init-build-cache.gradle <task>
+Run with:
 
-## Preparation in Google Cloud Storage
+[source,bash]
+----
+./gradlew --build-cache --init-script init-build-cache.gradle <task>
+----
 
-The following steps will create a Google Cloud Storage bucket named `$BUCKET` as part of the GCP project `$PROJECT` in your `$REGION` with private access. `gsutil` is available as part of the Google Cloud SDK.
+== Configuration Options
 
-    % gsutil mb -p $PROJECT -c regional -l $REGION gs://$BUCKET
-    [...]
-    % gsutil acl set private gs://$BUCKET
-    [...]
+The cache accepts the following options (in Kotlin DSL they are `Property<T>`s):
 
-To create a service account `$ACCOUNT` with access to the bucket the following commands have to be executed.
+|===
+| Option | Type | Default | Description
 
-    % gcloud iam service-accounts create $ACCOUNT --display-name "Service account to access the Gradle build cache in Google Cloud Storage"
-    [...]
-    % gsutil acl ch -u $ACCOUNT@$PROJECT.iam.gserviceaccount.com:WRITE gs://$BUCKET
-    [...]
+| `credentials`
+| String
+| `""`
+| Path to a service account JSON key file. If empty, *Application Default Credentials (ADC)* are used.
 
-A JSON key file `$KEY_FILE` that could be used by the Gradle plugin to access the bucket is created with the following statement.
+| `bucket`
+| String
+| —
+| Name of the GCS bucket to store cache entries. *Required.*
 
-    % gcloud iam service-accounts keys create $KEY_FILE --iam-account $ACCOUNT@$PROJECT.iam.gserviceaccount.com
-    [...]
+| `prefix`
+| String
+| unset
+| Optional key prefix (acts like a folder).
 
-If cached artifacts should be deleted after two weeks lifecycle rules like the following should be applied to the bucket.
+| `refreshAfterSeconds`
+| Int
+| `0`
+| If `> 0`, objects older than this threshold are “touched” on load (server-side rewrite) to keep them from lifecycle deletion.
+
+| `writeThreshold`
+| Int
+| `8 * 1024 * 1024`
+| Switches to a file-backed buffer when writing entries larger than the threshold (bytes).
+|===
+
+You can enable the build cache per run (`--build-cache`) or globally via `org.gradle.caching=true` in `gradle.properties`.
+
+== Preparing Google Cloud Storage
+
+=== Create a bucket (private, uniform access)
+
+[source,bash]
+----
+PROJECT=<your-project>
+REGION=<your-region>
+BUCKET=<your-bucket>
+
+gsutil mb -p "$PROJECT" -l "$REGION" -b on "gs://$BUCKET"
+----
+
+=== Grant permissions with IAM
+
+Grant your CI/service account the *Storage Object Admin* role on the bucket (read/write and object rewrite):
+
+[source,bash]
+----
+ACCOUNT=<service-account-name> # without domain
+
+gcloud iam service-accounts create "$ACCOUNT" \
+  --display-name "Gradle build cache (GCS)"
+
+gsutil iam ch \
+  serviceAccount:$ACCOUNT@$PROJECT.iam.gserviceaccount.com:roles/storage.objectAdmin \
+  gs://$BUCKET
+----
+
+=== Credentials
+
+*Preferred:* rely on *ADC* (no key files) on GCP/CI.
+If you need a key file:
+
+[source,bash]
+----
+KEY_FILE=cache-writer.json
+gcloud iam service-accounts keys create "$KEY_FILE" \
+  --iam-account "$ACCOUNT@$PROJECT.iam.gserviceaccount.com"
+----
+
+Then set `credentials` to the key path or export:
+
+[source,bash]
+----
+export GOOGLE_APPLICATION_CREDENTIALS="$PWD/$KEY_FILE"
+----
+
+=== Lifecycle management (automatic cleanup)
+
+Delete cached objects after 14 days:
 
 .rules.json
 [source,json]
---------------------------------------------------------------------
+----
 {
-  "rule":
-  [
-{
-  "action": {"type": "Delete"},
-  "condition": {"age": 14}
-}
+  "rule": [
+    { "action": { "type": "Delete" }, "condition": { "age": 14 } }
   ]
 }
---------------------------------------------------------------------
+----
 
-    % gsutil lifecycle set rules.json gs://$BUCKET
-    [...]
+[source,bash]
+----
+gsutil lifecycle set rules.json "gs://$BUCKET"
+----
 
+== How it works (high level)
 
-## License
+* Cache keys map to GCS object names (with optional `prefix`).
+* Reads stream directly from GCS; writes spill to a file-backed buffer above `writeThreshold`.
+* If `refreshAfterSeconds > 0`, frequently used entries are “touched” on load via a server-side copy to update create time so lifecycle rules don’t remove them prematurely.
 
-include::LICENSE[]
+== Troubleshooting
+
+* **403 / 404** – verify bucket name and IAM bindings (e.g., `roles/storage.objectAdmin`) on the bucket.
+* **Authentication** – if `credentials` is empty, ensure ADC is available or set `GOOGLE_APPLICATION_CREDENTIALS` to a service account key file.
+* **No cache hits** – confirm the build cache is enabled (`--build-cache` or `org.gradle.caching=true`) and that `push` is enabled for the environment.
+
+== License
+
+Apache License, Version 2.0 (see `LICENSE`).
