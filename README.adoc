@@ -120,7 +120,10 @@ initscript {
 import net.idlestate.gradle.caching.GCSBuildCache
 import net.idlestate.gradle.caching.GCSBuildCacheServiceFactory
 
-gradle.settingsEvaluated {
+beforeSettings {
+    buildscript.repositories.add(gradlePluginPortal())
+    buildscript.dependencies.add("classpath","net.idlestate:gradle-gcs-build-cache:1.4.0")
+
     buildCache {
         local { enabled = true }
         registerBuildCacheService<GCSBuildCache>(GCSBuildCacheServiceFactory::class)
