@@ -121,14 +121,7 @@ class GCSBuildCacheService(
     }
 
     private fun objectNameFor(key: BuildCacheKey): String =
-        buildString {
-            if (!prefix.isNullOrEmpty()) {
-                append(prefix)
-                append('/')
-            }
-
-            append(key.hashCode)
-        }
+        listOfNotNull(prefix, key.hashCode).joinToString("/")
 
     private fun resolveCredentials(input: String): GoogleCredentials =
         if (input.isEmpty()) {
