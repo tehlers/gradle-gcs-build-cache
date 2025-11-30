@@ -1,0 +1,12 @@
+[versions]
+
+google-cloud-storage = "2.60.0"
+ktlint = "14.0.1"
+
+[plugins]
+
+ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlint"}
+
+[libraries]
+
+google-cloud-storage = { module = "com.google.cloud:google-cloud-storage", version.ref = "google-cloud-storage"}

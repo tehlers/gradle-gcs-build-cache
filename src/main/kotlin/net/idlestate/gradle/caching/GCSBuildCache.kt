@@ -15,22 +15,45 @@
  */
 package net.idlestate.gradle.caching
 
-import net.idlestate.gradle.caching.GCSBuildCacheServiceFactory.Companion.DEFAULT_WRITE_THRESHOLD
+import com.google.auth.oauth2.GoogleCredentials
+import org.gradle.api.provider.Property
+import org.gradle.caching.BuildCacheException
 import org.gradle.caching.configuration.AbstractBuildCache
-import javax.inject.Inject
 
 /**
- * Configuration of the GCS based build cache.
+ * Configuration for the GCS-based remote build cache.
+ *
+ * Properties use the lazy [Property] API from Gradle
  *
  * @author Thorsten Ehlers (thorsten.ehlers@googlemail.com) (initial creation)
+ * @author Nico Thomas Beranek (nico@jube.at) (1.4.0 update)
  */
-abstract class GCSBuildCache constructor(
-    var credentials: String? = "",
-    var bucket: String? = "",
-    var prefix: String? = null,
-    var refreshAfterSeconds: Int? = 0,
-    var writeThreshold: Int? = DEFAULT_WRITE_THRESHOLD,
-) : AbstractBuildCache() {
-    @Inject constructor() : this("", "", null, 0, DEFAULT_WRITE_THRESHOLD) {
-    }
+abstract class GCSBuildCache : AbstractBuildCache() {
+    /**
+     * Service account credentials: Path to JSON.
+     * When empty uses “[GoogleCredentials.getApplicationDefault]”.
+     */
+    abstract val credentials: Property<String>
+
+    /**
+     * Target GCS bucket name (required for a remote cache).
+     */
+    abstract val bucket: Property<String>
+
+    /**
+     * Optional key prefix within the bucket (acts like a “folder”).
+     */
+    abstract val prefix: Property<String>
+
+    /**
+     * Metadata refresh interval in seconds; 0 disables refresh.
+     */
+    abstract val refreshAfterSeconds: Property<Int>
+
+    /**
+     * Threshold in bytes under which writes are buffered instead of streamed.
+     *
+     * @throws BuildCacheException when negative
+     */
+    abstract val writeThreshold: Property<Int>
 }

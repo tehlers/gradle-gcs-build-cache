@@ -17,18 +17,23 @@ package net.idlestate.gradle.caching
 
 import org.gradle.api.Plugin
 import org.gradle.api.initialization.Settings
+import org.gradle.kotlin.dsl.registerBuildCacheService
+import org.gradle.kotlin.dsl.remote
 
 /**
  * Settings-Plugin that configures the remote build cache to use the Google Cloud Storage based implementation.
  *
  * @author Thorsten Ehlers (thorsten.ehlers@googlemail.com) (initial creation)
+ * @author Nico Thomas Beranek (nico@jube.at) (1.4.0 update)
  */
-class GCSBuildCachePlugin : Plugin<Settings> {
+abstract class GCSBuildCachePlugin : Plugin<Settings> {
     override fun apply(settings: Settings) {
-        settings.buildCache {
-            registerBuildCacheService(GCSBuildCache::class.java, GCSBuildCacheServiceFactory::class.java)
-            remote(GCSBuildCache::class.java) {
-                isPush = true
+        settings.run {
+            buildCache {
+                registerBuildCacheService<GCSBuildCache>(GCSBuildCacheServiceFactory::class)
+                remote<GCSBuildCache> {
+                    isPush = true
+                }
             }
         }
     }
