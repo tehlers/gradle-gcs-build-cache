@@ -10,7 +10,7 @@ The build cache takes the following options:
 |Option |Description
 
 |credentials
-|JSON key file of the service account to use, otherwise GCP Application Default Credentials are used. (optional)
+|JSON key file of the service account to use, otherwise the `GOOGLE_OAUTH_ACCESS_TOKEN` env var, or GCP Application Default Credentials are used. (optional)
 
 |bucket
 |Name of the Google Cloud Storage bucket (required)

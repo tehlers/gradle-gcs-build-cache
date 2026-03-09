@@ -15,6 +15,7 @@
  */
 package net.idlestate.gradle.caching
 
+import com.google.auth.oauth2.AccessToken
 import com.google.auth.oauth2.GoogleCredentials
 import com.google.auth.oauth2.ServiceAccountCredentials
 import com.google.cloud.storage.Bucket
@@ -44,9 +45,7 @@ class GCSBuildCacheService(credentials: String, val bucketName: String, val pref
     init {
         try {
             val storage = StorageOptions.newBuilder()
-                .setCredentials(
-                    if (credentials.isEmpty()) GoogleCredentials.getApplicationDefault() else ServiceAccountCredentials.fromStream(FileInputStream(credentials))
-                )
+                .setCredentials(getGoogleCredentials(credentials))
                 .build()
                 .service
 
@@ -106,5 +105,20 @@ class GCSBuildCacheService(credentials: String, val bucketName: String, val pref
 
     override fun close() {
         // nothing to do
+    }
+
+    private fun getGoogleCredentials(credentials: String): GoogleCredentials {
+        if (credentials.isEmpty()) {
+            // see terraform docs: https://registry.terraform.io/providers/hashicorp/google/latest/docs/guides/provider_reference.html#access_token-1
+            val envAccessToken: String = System.getenv("GOOGLE_OAUTH_ACCESS_TOKEN")
+
+            if (envAccessToken != null && !envAccessToken.isEmpty()) {
+                return GoogleCredentials.create(AccessToken(envAccessToken, null))
+            } else {
+                return GoogleCredentials.getApplicationDefault()
+            }
+        } else {
+            return ServiceAccountCredentials.fromStream(FileInputStream(credentials))
+        }
     }
 }
