@@ -2,8 +2,8 @@ import org.jlleitschuh.gradle.ktlint.reporter.ReporterType
 
 plugins {
     `kotlin-dsl`
-    `maven-publish`
     alias(libs.plugins.ktlint)
+    alias(libs.plugins.plugin.publish)
 }
 
 group = "net.idlestate"

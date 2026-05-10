@@ -3,10 +3,12 @@
 google-cloud-storage = "2.67.0"
 jackson = "2.21.3"
 ktlint = "14.2.0"
+plugin-publish = "2.1.1"
 
 [plugins]
 
 ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlint"}
+plugin-publish = { id = "com.gradle.plugin-publish", version.ref = "plugin-publish"}
 
 [libraries]
 
